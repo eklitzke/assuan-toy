@@ -49,6 +49,19 @@ class Assuan {
     return std::string(line, sz);
   }
 
+  std::string ReadData() {
+    std::string data;
+    for (;;) {
+      std::string line = ReadLine();
+      if (line == "OK") {
+        break;
+      } else if (line.substr(0, 2) == "D ") {
+        data = line.substr(2);
+      }
+    }
+    return data;
+  }
+
  private:
   assuan_context_t ctx_;
 

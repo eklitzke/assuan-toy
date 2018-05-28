@@ -40,6 +40,18 @@ int main(int argc, char **argv) {
   Assuan ctx;
   ctx.SocketConnect(socket_path.empty() ? GuessGPGSocket() : socket_path);
   ctx.WriteLine("GETINFO version");
-  std::cout << ctx.ReadLine() << "\n";
+  std::string version = ctx.ReadData();
+  std::cout << "connected to agent version " << version << "\n";
+
+  ctx.WriteLine("GENKEY");
+  for (;;) {
+    if (ctx.ReadLine() == "INQUIRE KEYPARAM") {
+      break;
+    }
+  }
+  ctx.WriteLine("D (genkey(ecc(curve 9:secp256k1)(flags nocomp)))");
+  ctx.WriteLine("END");
+  std::string key = ctx.ReadData();
+  std::cout << "key data is: " << key << "\n";
   return 0;
 }
