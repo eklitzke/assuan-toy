@@ -11,6 +11,10 @@ void InitGpgerror();
 // Guess the socket name.
 std::string GuessGPGSocket();
 
+enum class KeyType {
+  BITCOIN = 1,
+};
+
 class Assuan {
  public:
   Assuan() {
@@ -36,10 +40,25 @@ class Assuan {
     if (err != 0) RaiseError("assuan_socket_connect", err);
   }
 
-  void WriteLine(const std::string &line) {
-    gpg_error_t err = assuan_write_line(ctx_, line.c_str());
-    if (err != 0) RaiseError("assuan_write_line", err);
+  std::string GetVersion() {
+    WriteLine("GETINFO version");
+    return ReadData();
   }
+
+  std::string GenKey(KeyType type = KeyType::BITCOIN) {
+    WriteLine("GENKEY");
+    for (;;) {
+      if (ReadLine() == "INQUIRE KEYPARAM") {
+        break;
+      }
+    }
+    WriteLine("D (genkey(ecc(curve 9:secp256k1)(flags nocomp)))");
+    WriteLine("END");
+    return ReadData();
+  }
+
+ private:
+  assuan_context_t ctx_;
 
   std::string ReadLine() {
     char *line;
@@ -47,6 +66,11 @@ class Assuan {
     gpg_error_t err = assuan_read_line(ctx_, &line, &sz);
     if (err != 0) RaiseError("assuan_read_line", err);
     return std::string(line, sz);
+  }
+
+  void WriteLine(const std::string &line) {
+    gpg_error_t err = assuan_write_line(ctx_, line.c_str());
+    if (err != 0) RaiseError("assuan_write_line", err);
   }
 
   std::string ReadData() {
@@ -61,9 +85,6 @@ class Assuan {
     }
     return data;
   }
-
- private:
-  assuan_context_t ctx_;
 
   void RaiseError(const char *string, gpg_error_t err) {
     std::ostringstream os;

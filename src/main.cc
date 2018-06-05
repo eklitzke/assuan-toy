@@ -9,9 +9,11 @@
 #include "./gpghelper.h"
 
 int main(int argc, char **argv) {
+  bool gen_key = false;
   std::string socket_path;
-  static const char short_opts[] = "hs:";
+  static const char short_opts[] = "khs:";
   static struct option long_opts[] = {{"help", no_argument, 0, 'h'},
+                                      {"key", no_argument, 0, 'k'},
                                       {"socket", required_argument, 0, 's'},
                                       {0, 0, 0, 0}};
   for (;;) {
@@ -25,6 +27,8 @@ int main(int argc, char **argv) {
         std::cout << "usage: " << PACKAGE << " [-h] [-s SOCKET]\n";
         return 0;
         break;
+      case 'k':
+        gen_key = true;
       case 's':
         socket_path = optarg;
         break;
@@ -39,19 +43,11 @@ int main(int argc, char **argv) {
 
   Assuan ctx;
   ctx.SocketConnect(socket_path.empty() ? GuessGPGSocket() : socket_path);
-  ctx.WriteLine("GETINFO version");
-  std::string version = ctx.ReadData();
-  std::cout << "connected to agent version " << version << "\n";
 
-  ctx.WriteLine("GENKEY");
-  for (;;) {
-    if (ctx.ReadLine() == "INQUIRE KEYPARAM") {
-      break;
-    }
+  std::cout << "connected to agent version " << ctx.GetVersion() << "\n";
+  if (gen_key) {
+    std::cout << "key data is: " << ctx.GenKey() << "\n";
   }
-  ctx.WriteLine("D (genkey(ecc(curve 9:secp256k1)(flags nocomp)))");
-  ctx.WriteLine("END");
-  std::string key = ctx.ReadData();
-  std::cout << "key data is: " << key << "\n";
+
   return 0;
 }
