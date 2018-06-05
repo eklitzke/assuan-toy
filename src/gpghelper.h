@@ -2,6 +2,7 @@
 
 #include <assuan.h>
 
+#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -17,7 +18,7 @@ enum class KeyType {
 
 class Assuan {
  public:
-  Assuan() {
+  Assuan() : trace_(false) {
     InitGpgerror();
 
     assuan_log_cb_t log_cb;
@@ -57,8 +58,11 @@ class Assuan {
     return ReadData();
   }
 
+  void SetTrace() { trace_ = true; }
+
  private:
   assuan_context_t ctx_;
+  bool trace_;
 
   std::string ReadLine() {
     char *line;
@@ -69,6 +73,9 @@ class Assuan {
   }
 
   void WriteLine(const std::string &line) {
+    if (trace_) {
+      std::cerr << "C: " << line << "\n";
+    }
     gpg_error_t err = assuan_write_line(ctx_, line.c_str());
     if (err != 0) RaiseError("assuan_write_line", err);
   }
@@ -77,6 +84,9 @@ class Assuan {
     std::string data;
     for (;;) {
       std::string line = ReadLine();
+      if (trace_) {
+        std::cerr << "S: " << line << "\n";
+      }
       if (line == "OK") {
         break;
       } else if (line.substr(0, 2) == "D ") {
