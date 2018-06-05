@@ -18,8 +18,16 @@ AM_PATH_LIBASSUAN([2])
 # Checks for libraries.
 
 # Checks for header files.
+# FIXME: need to make this work with AM_PATH_LIBASSUAN
+#AC_CHECK_HEADERS([assuan.h], [], [AC_MSG_ERROR([Could not find assuan.h])])
+AC_CHECK_HEADERS([gpg-error.h], [], [AC_MSG_ERROR([Could not find gpg-error.h])])
+AC_CHECK_HEADERS([unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_HEADER_STDBOOL
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
 
 # Checks for library functions.
 
