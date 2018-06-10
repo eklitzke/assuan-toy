@@ -16,60 +16,62 @@
 
 #pragma once
 
-#include <exception>
 #include <list>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include <variant>
 
-class bad_parse : public std::runtime_error {
- public:
-  bad_parse(const std::string &why) : std::runtime_error(why) {}
-};
-
+// An S-expression is a list of nodes.
 struct Sexp;
-
 using Node = std::variant<std::string, Sexp>;
+
+// Functional interfaces for car and cdr.
+const Node &car(const Sexp &sexp);
+const Node &car(const Node &node);
+Sexp cdr(const Sexp &sexp);
 
 class Sexp {
  public:
-  Sexp() {}
-  explicit Sexp(std::list<Node> children) : children_(children) {}
+  // Create a Sexp from a parse string.
   explicit Sexp(const std::string &input);
 
-  const std::list<Node> &children() const { return children_; }
-  size_t size() const { return children_.size(); }
-  bool empty() const { return children_.empty(); }
+  size_t size() const { return nodes_.size(); }
+  bool empty() const { return nodes_.empty(); }
+
+  friend std::ostream &operator<<(std::ostream &, const Sexp &);
+  friend const Node &car(const Sexp &);
+  friend Sexp cdr(const Sexp &);
 
  private:
-  std::list<Node> children_;
+  std::list<Node> nodes_;
 
-  void push() { children_.push_back(Sexp()); }
+  Sexp() {}
+  explicit Sexp(std::list<Node> children) : nodes_(children) {}
 
-  void push(const Sexp &sexp) { children_.push_back(sexp); }
+  void push() { nodes_.push_back(Sexp()); }
+
+  void push(const Sexp &sexp) { nodes_.push_back(sexp); }
 
   void push(const std::string &s) {
-    std::get<Sexp>(children_.back()).children_.push_back(s);
+    std::get<Sexp>(nodes_.back()).nodes_.push_back(s);
   }
 
-  void push_back(const Sexp &sexp) {
-    std::get<Sexp>(children_.back()).push(sexp);
-  }
+  void push_back(const Sexp &sexp) { std::get<Sexp>(nodes_.back()).push(sexp); }
 
   Node pop() {
-    Node ret = children_.back();
-    children_.pop_back();
+    Node ret = nodes_.back();
+    nodes_.pop_back();
     return ret;
   }
 };
 
-// print a sexp
+// for iostream printing
 std::ostream &operator<<(std::ostream &os, const Sexp &sexp);
-
-// print a node
 std::ostream &operator<<(std::ostream &os, const Node &node);
 
-// standard car/cdr routines
-const Node &car(const Sexp &sexp);
-const Node &car(const Node &node);
-Sexp cdr(const Sexp &sexp);
+// thrown when parse fails
+class bad_parse : public std::runtime_error {
+ public:
+  bad_parse(const std::string &why) : std::runtime_error(why) {}
+};

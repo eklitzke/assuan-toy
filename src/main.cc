@@ -81,10 +81,6 @@ int main(int argc, char **argv) {
   try {
     Sexp txt("(genkey(ecc(curve 9:secp256k1)(flags nocomp)))");
     std::cout << txt << "\n";
-    if (auto pval = std::get_if<std::string>(&txt.children().front()))
-      std::cout << "first child is a string\n";
-    else
-      std::cout << "first child is a sexp\n";
     if (auto pval = std::get_if<std::string>(&car(txt)))
       std::cout << "car is a string\n";
     else

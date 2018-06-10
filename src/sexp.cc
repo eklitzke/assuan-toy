@@ -82,13 +82,13 @@ Sexp::Sexp(const std::string &input) {
   if (word_size != 0) {
     throw bad_parse("extra characters after parse");
   }
-  Sexp child = std::get<Sexp>(children_.front());
-  *this = std::get<Sexp>(child.children_.front());
+  Sexp child = std::get<Sexp>(nodes_.front());
+  *this = std::get<Sexp>(child.nodes_.front());
 }
 
 std::ostream &operator<<(std::ostream &os, const Sexp &sexp) {
   os << "(";
-  const std::list<Node> &children = sexp.children();
+  const std::list<Node> &children = sexp.nodes_;
   if (!children.empty()) {
     auto ultimate = children.end();
     ultimate--;
@@ -106,14 +106,12 @@ std::ostream &operator<<(std::ostream &os, const Node &node) {
   return os;
 }
 
-const Node &car(const Sexp &sexp) { return sexp.children().front(); }
+const Node &car(const Sexp &s) { return s.nodes_.front(); }
 
-const Node &car(const Node &sexp) {
-  return car(std::get<Sexp>(sexp).children().front());
-}
-
-Sexp cdr(const Sexp &sexp) {
-  std::list<Node> copy = sexp.children();
+Sexp cdr(const Sexp &s) {
+  std::list<Node> copy = s.nodes_;
   copy.pop_front();
   return Sexp(copy);
 }
+
+const Node &car(const Node &node) { return car(std::get<Sexp>(node)); }
