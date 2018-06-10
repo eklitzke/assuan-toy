@@ -16,6 +16,7 @@
 
 #include "./util.h"
 
+#include <iomanip>
 #include <sstream>
 
 const char kHexdig[] = "0123456789ABCDEF";
@@ -48,6 +49,23 @@ std::ostream &operator<<(std::ostream &os, const StringEscape &esc) {
     }
   }
   return os;
+}
+
+std::string AssuanEncode(const std::string &str) {
+  std::ostringstream os;
+  for (char c : str) {
+    switch (c) {
+      case '%':
+      case '\r':
+      case '\n':
+        os << std::setw(2) << std::hex << static_cast<int>(c);
+        break;
+      default:
+        os << c;
+        break;
+    }
+  }
+  return os.str();
 }
 
 std::string AssuanDecode(const std::string &str) {

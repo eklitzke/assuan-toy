@@ -91,10 +91,11 @@ class Assuan {
   }
 
   void WriteLine(const std::string &line) {
+    std::string enc = AssuanEncode(line);
     if (trace_) {
-      std::cerr << "C: " << line << "\n";
+      std::cerr << "C: " << enc << "\n";
     }
-    gpg_error_t err = assuan_write_line(ctx_, line.c_str());
+    gpg_error_t err = assuan_write_line(ctx_, enc.c_str());
     if (err != 0) RaiseError("assuan_write_line", err);
   }
 
