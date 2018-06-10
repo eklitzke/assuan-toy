@@ -16,13 +16,15 @@
 
 #include "./sexp.h"
 
+#include "./util.h"
+
 #include <ctype.h>
 #include <cassert>
-
-const char kHexdig[] = "0123456789ABCDEF";
+#include <sstream>
 
 Sexp::Sexp(const std::string &input) {
   bool all_digits = true;
+  bool allow_data = true;
   size_t word_size = 0;
   size_t skip = 0;
   int stack_size = 0;
@@ -42,6 +44,7 @@ Sexp::Sexp(const std::string &input) {
         word_size = 0;
       }
       all_digits = true;
+      allow_data = true;
       push();
     } else if (c == ')') {
       if (stack_size == 0) {
@@ -52,6 +55,7 @@ Sexp::Sexp(const std::string &input) {
         word_size = 0;
       }
       all_digits = true;
+      allow_data = true;
       Sexp temp = std::get<Sexp>(pop());
       push_back(temp);
       stack_size--;
@@ -61,7 +65,12 @@ Sexp::Sexp(const std::string &input) {
         word_size = 0;
       }
       all_digits = true;
+      allow_data = true;
     } else {
+      if (!allow_data && !isdigit(c)) {
+        throw bad_parse("incomplete parse, did not expect additional data");
+      }
+      allow_data = true;
       if (c == ':' && all_digits) {
         const std::string num = input.substr(i - word_size, word_size);
         long lskip = std::stol(num);
@@ -71,6 +80,7 @@ Sexp::Sexp(const std::string &input) {
         skip = lskip;
         push(input.substr(i + 1, skip));
         word_size = 0;
+        allow_data = false;
         continue;
       }
       if (all_digits && !isdigit(c)) {
@@ -106,37 +116,10 @@ std::ostream &operator<<(std::ostream &os, const Sexp &sexp) {
 
 // print a node; if the node value is a string, it's escaped before printing
 std::ostream &operator<<(std::ostream &os, const Node &node) {
-  if (auto p = std::get_if<std::string>(&node)) {
-    for (auto i = p->begin(), end = p->end(); i != end; ++i) {
-      unsigned char c = *i;
-      if (' ' <= c and c <= '~' and c != '\\' and c != '"') {
-        os << c;
-      } else {
-        os << '\\';
-        switch (c) {
-          case '"':
-            os << '"';
-            break;
-          case '\\':
-            os << '\\';
-            break;
-          case '\t':
-            os << 't';
-            break;
-          case '\r':
-            os << 'r';
-            break;
-          case '\n':
-            os << 'n';
-            break;
-          default:
-            os << 'x' << kHexdig[c >> 4] << kHexdig[c & 0xF];
-        }
-      }
-    }
-  } else {
+  if (auto stringp = std::get_if<std::string>(&node))
+    os << StringEscape(*stringp);
+  else
     os << std::get<Sexp>(node);
-  }
   return os;
 }
 

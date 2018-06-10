@@ -24,6 +24,7 @@
 #include "./config.h"
 #include "./gpghelper.h"
 #include "./sexp.h"
+#include "./util.h"
 
 int main(int argc, char **argv) {
   bool gen_key = false, trace = false;
@@ -76,8 +77,14 @@ int main(int argc, char **argv) {
   std::cout << "connected to agent version " << ctx.GetVersion() << "\n";
   if (gen_key) {
     const std::string key_sexp = ctx.GenKey();
-    Sexp key(key_sexp);
-    std::cout << "key data is: " << key << "\n";
+    std::cout << "sexp size is " << key_sexp.size() << "\n";
+    try {
+      Sexp key(key_sexp);
+      std::cout << "key data is: " << key << "\n";
+    } catch (bad_parse &exc) {
+      std::cerr << "error: " << exc.what() << "\n";
+      std::cerr << "input string: " << StringEscape(key_sexp) << "\n";
+    }
   }
 
   return 0;
