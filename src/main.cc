@@ -63,7 +63,8 @@ int main(int argc, char **argv) {
   }
 #endif
   try {
-    SexpParseString(
+    Sexp txt("(genkey(ecc(curve 9:secp256k1)(flags nocomp)))");
+    Sexp bin(
         {"(10:public-key(3:ecc(5:curve9:secp256k1)(1:q65:"
          "\x04YU\x89\xa5\x05\xa4\xd8~\x07%0D^\x9a\xe4\x7f\xb4\xd8\x1c\xab)"
          "WH\xa1\x88\x84\xb0\x0b\xc6\xbb\xb4\xfdQ\xfc\x17\x15\x00\x85.\xcb("

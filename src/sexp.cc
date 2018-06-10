@@ -1,45 +1,62 @@
 #include "./sexp.h"
 
-#include <iostream>
-#include <stdexcept>
+#include <ctype.h>
+#include <cassert>
+#include <sstream>
 
-Sexp SexpParseString(std::string input) {
-  std::cout << "INPUT[" << input << "]\n;";
-  if (input.empty()) {
-    throw std::runtime_error("finished parse");
-  }
-  if (input.front() != '(') {
-    throw std::runtime_error("expected (");
-  }
-  if (input.back() != ')') {
-    std::cerr << input.back() << "\n";
-    throw std::runtime_error("expected )");
-  }
+Sexp::Sexp(const std::string &input) {
+  push_sexp();
 
-  std::string data = input.substr(1, data.size() - 2);  // ?
-  std::cout << "DATA[" << data << "]\n;";
+  bool all_digits = true;
+  size_t word_size = 0;
+  std::ostringstream word;
+  size_t skip = 0;
+  int stack_size = 0;
 
-  size_t idx;
-  long len = std::stol(data, &idx);
-  std::cout << "len = " << len << ", consumed " << idx << " bytes\n";
-  if (len <= 0) {
-    throw std::runtime_error("bad count");
+  for (size_t i = 0; i < input.size(); i++) {
+    if (skip) {
+      skip--;
+      continue;
+    }
+    char c = input[i];
+    if (c == '(') {
+      push_sexp();
+      all_digits = true;
+      stack_size++;
+    } else if (c == ')') {
+      if (word_size) {
+        push_string(word.str());
+        word.str("");
+        word_size = 0;
+      }
+      all_digits = true;
+      Sexp temp = std::get<Sexp>(pop_back());
+      push_sexp(temp);
+      stack_size--;
+    } else if (isspace(c)) {
+      if (word_size) {
+        push_string(word.str());
+        word.str("");
+        word_size = 0;
+      }
+      all_digits = true;
+    } else {
+      if (c == ':' && all_digits) {
+        long lskip = std::stol(word.str());
+        assert(lskip > 0);
+        skip = lskip;
+        push_string(input.substr(i + i, skip));
+        word.str("");
+        word_size = 0;
+        continue;
+      }
+      if (all_digits && !isdigit(c)) {
+        all_digits = false;
+      }
+      word << c;
+      word_size++;
+    }
   }
-
-  if (data[idx] != ':') {
-    throw std::runtime_error("expected :");
-  }
-
-  std::string key = data.substr(idx + 1, len);
-  std::cout << "KEY[" << key << "]\n;";
-
-  char c = data[idx + 1 + len];
-  if (c == '(') {
-    std::cout << "subtree\n";  // recurse
-  } else if (c == ':') {
-    std::cout << "data\n";  // recurse
-  } else {
-    throw std::runtime_error("expected : or (");
-  }
-  return {};
+  assert(stack_size == 0);
+  assert(word_size == 0);
 }
