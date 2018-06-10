@@ -22,6 +22,8 @@
 #include <sstream>
 #include <string>
 
+#include "./util.h"
+
 // Ensure libgpg-error is intializied
 void InitGpgerror();
 
@@ -106,7 +108,7 @@ class Assuan {
       if (line == "OK") {
         break;
       } else if (line.substr(0, 2) == "D ") {
-        data = line.substr(2);
+        data = AssuanDecode(line.substr(2));
       }
     }
     return data;

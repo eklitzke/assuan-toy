@@ -25,3 +25,5 @@ struct StringEscape {
 };
 
 std::ostream &operator<<(std::ostream &os, const StringEscape &esc);
+
+std::string AssuanDecode(const std::string &s);

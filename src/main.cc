@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License along with
 // assuan-toy. If not, see <http://www.gnu.org/licenses/>.
 
-#include <gcrypt.h>
 #include <getopt.h>
 #include <unistd.h>
 
@@ -77,18 +76,15 @@ int main(int argc, char **argv) {
   std::cout << "connected to agent version " << ctx.GetVersion() << "\n";
   if (gen_key) {
     const std::string key_sexp = ctx.GenKey();
-    size_t sz = gcry_sexp_canon_len((const unsigned char *)key_sexp.c_str(),
-                                    key_sexp.size(), nullptr, nullptr);
-    std::cerr << "gcry len " << sz << "\n";
-    std::cerr << "input string, " << key_sexp.size()
-              << " bytes: " << StringEscape(key_sexp) << "\n";
     try {
       Sexp key(key_sexp);
       std::cout << "key data is: " << key << "\n";
     } catch (bad_parse &exc) {
-      std::cerr << "error: " << exc.what() << "\n";
+      std::cerr << "ERROR: " << exc.what() << "\n";
+      std::cerr << "input string, " << key_sexp.size()
+                << " bytes: " << StringEscape(key_sexp) << "\n";
+      return 1;
     }
   }
-
   return 0;
 }
