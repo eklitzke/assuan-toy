@@ -17,6 +17,9 @@
 #include "./sexp.h"
 
 #include <ctype.h>
+#include <cassert>
+
+const char kHexdig[] = "0123456789ABCDEF";
 
 Sexp::Sexp(const std::string &input) {
   bool all_digits = true;
@@ -101,8 +104,39 @@ std::ostream &operator<<(std::ostream &os, const Sexp &sexp) {
   return os;
 }
 
+// print a node; if the node value is a string, it's escaped before printing
 std::ostream &operator<<(std::ostream &os, const Node &node) {
-  std::visit([&os](auto &&arg) { os << arg; }, node);
+  if (auto p = std::get_if<std::string>(&node)) {
+    for (auto i = p->begin(), end = p->end(); i != end; ++i) {
+      unsigned char c = *i;
+      if (' ' <= c and c <= '~' and c != '\\' and c != '"') {
+        os << c;
+      } else {
+        os << '\\';
+        switch (c) {
+          case '"':
+            os << '"';
+            break;
+          case '\\':
+            os << '\\';
+            break;
+          case '\t':
+            os << 't';
+            break;
+          case '\r':
+            os << 'r';
+            break;
+          case '\n':
+            os << 'n';
+            break;
+          default:
+            os << 'x' << kHexdig[c >> 4] << kHexdig[c & 0xF];
+        }
+      }
+    }
+  } else {
+    os << std::get<Sexp>(node);
+  }
   return os;
 }
 
