@@ -20,6 +20,7 @@
 
 #include <ctype.h>
 #include <cassert>
+#include <iostream>
 #include <sstream>
 
 Sexp::Sexp(const std::string &input) {
@@ -60,6 +61,7 @@ Sexp::Sexp(const std::string &input) {
       push_back(temp);
       stack_size--;
     } else if (isspace(c)) {
+      std::cerr << "SPACE\n";
       if (word_size) {
         push(input.substr(i - word_size, word_size));
         word_size = 0;

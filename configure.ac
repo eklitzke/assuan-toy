@@ -13,7 +13,8 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 AM_INIT_AUTOMAKE([dist-bzip2 foreign subdir-objects -Wall -Werror])
-AM_PATH_LIBASSUAN([2])
+AM_PATH_LIBASSUAN([2],[],[AC_MSG_ERROR([could not find libassuan])])
+AM_PATH_LIBGCRYPT([1],[],[AC_MSG_ERROR([could not find libgcrypt])])
 
 # Checks for libraries.
 
