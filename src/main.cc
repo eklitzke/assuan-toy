@@ -64,6 +64,12 @@ int main(int argc, char **argv) {
 #endif
   try {
     Sexp txt("(genkey(ecc(curve 9:secp256k1)(flags nocomp)))");
+    std::cout << txt << " ";
+    if (auto pval = std::get_if<std::string>(&txt.children()[0]))
+      std::cout << "first child is a string\n";
+    else
+      std::cout << "first child is a sexp\n";
+#if 0
     Sexp bin(
         {"(10:public-key(3:ecc(5:curve9:secp256k1)(1:q65:"
          "\x04YU\x89\xa5\x05\xa4\xd8~\x07%0D^\x9a\xe4\x7f\xb4\xd8\x1c\xab)"
@@ -72,6 +78,8 @@ int main(int argc, char **argv) {
          "\xe5?"
          ")))",
          117});
+    std::cout << bin << " ";
+#endif
   } catch (const std::exception &exc) {
     std::cerr << "ERROR: " << exc.what() << "\n";
     return 1;
