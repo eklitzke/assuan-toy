@@ -16,10 +16,16 @@
 
 #pragma once
 
+#include <exception>
 #include <list>
 #include <ostream>
 #include <string>
 #include <variant>
+
+class bad_parse : public std::runtime_error {
+ public:
+  bad_parse(const std::string &why) : std::runtime_error(why) {}
+};
 
 struct Sexp;
 
@@ -38,27 +44,19 @@ class Sexp {
  private:
   std::list<Node> children_;
 
-  Node &push_sexp(const Sexp &sexp) {
-    children_.push_back(sexp);
-    return children_.back();
+  void push() { children_.push_back(Sexp()); }
+
+  void push(const Sexp &sexp) { children_.push_back(sexp); }
+
+  void push(const std::string &s) {
+    std::get<Sexp>(children_.back()).children_.push_back(s);
   }
 
-  Node &push_sexp() { return push_sexp({}); }
-
-  Node &push_back_sexp(const Sexp &sexp) {
-    Sexp &back = std::get<Sexp>(children_.back());
-    back.push_sexp(sexp);
-    return back.children_.back();
+  void push_back(const Sexp &sexp) {
+    std::get<Sexp>(children_.back()).push(sexp);
   }
 
-  void push_string(const std::string &s) {
-    Sexp &back = std::get<Sexp>(children_.back());
-    back.append_string(s);
-  }
-
-  void append_string(const std::string &s) { children_.push_back(s); }
-
-  Node pop_back() {
+  Node pop() {
     Node ret = children_.back();
     children_.pop_back();
     return ret;

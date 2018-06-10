@@ -17,17 +17,14 @@
 #include "./sexp.h"
 
 #include <ctype.h>
-#include <cassert>
-#include <sstream>
 
 Sexp::Sexp(const std::string &input) {
   bool all_digits = true;
   size_t word_size = 0;
-  std::ostringstream word;
   size_t skip = 0;
   int stack_size = 0;
 
-  push_sexp();
+  push();
 
   for (size_t i = 0; i < input.size(); i++) {
     char c = input[i];
@@ -38,52 +35,53 @@ Sexp::Sexp(const std::string &input) {
     if (c == '(') {
       stack_size++;
       if (word_size) {
-        push_string(word.str());
-        word.str("");
+        push(input.substr(i - word_size, word_size));
         word_size = 0;
       }
       all_digits = true;
-      push_sexp();
+      push();
     } else if (c == ')') {
       if (stack_size == 0) {
         break;
       }
       if (word_size) {
-        push_string(word.str());
-        word.str("");
+        push(input.substr(i - word_size, word_size));
         word_size = 0;
       }
       all_digits = true;
-      Sexp temp = std::get<Sexp>(pop_back());
-      push_back_sexp(temp);
+      Sexp temp = std::get<Sexp>(pop());
+      push_back(temp);
       stack_size--;
     } else if (isspace(c)) {
       if (word_size) {
-        push_string(word.str());
-        word.str("");
+        push(input.substr(i - word_size, word_size));
         word_size = 0;
       }
       all_digits = true;
     } else {
       if (c == ':' && all_digits) {
-        long lskip = std::stol(word.str());
-        assert(lskip > 0);
+        const std::string num = input.substr(i - word_size, word_size);
+        long lskip = std::stol(num);
+        if (lskip <= 0) {
+          throw bad_parse("failed to parse numeric prefix: " + num);
+        }
         skip = lskip;
-        std::string s = input.substr(i + 1, skip);
-        push_string(s);
-        word.str("");
+        push(input.substr(i + 1, skip));
         word_size = 0;
         continue;
       }
       if (all_digits && !isdigit(c)) {
         all_digits = false;
       }
-      word << c;
       word_size++;
     }
   }
-  assert(stack_size == 0);
-  assert(word_size == 0);
+  if (stack_size != 0) {
+    throw bad_parse("stack was not clean after parse");
+  }
+  if (word_size != 0) {
+    throw bad_parse("extra characters after parse");
+  }
   Sexp child = std::get<Sexp>(children_.front());
   *this = std::get<Sexp>(child.children_.front());
 }
