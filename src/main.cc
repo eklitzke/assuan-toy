@@ -1,3 +1,19 @@
+// Copyright (c) 2018 Evan Klitzke <evan@eklitzke.org>
+//
+// This file is part of assuan-toy.
+//
+// assuan-toy is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// assuan-toy is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with
+// assuan-toy. If not, see <http://www.gnu.org/licenses/>.
+
 #include <unistd.h>
 
 #include <getopt.h>
@@ -64,11 +80,17 @@ int main(int argc, char **argv) {
 #endif
   try {
     Sexp txt("(genkey(ecc(curve 9:secp256k1)(flags nocomp)))");
-    std::cout << txt << " ";
-    if (auto pval = std::get_if<std::string>(&txt.children()[0]))
+    std::cout << txt << "\n";
+    if (auto pval = std::get_if<std::string>(&txt.children().front()))
       std::cout << "first child is a string\n";
     else
       std::cout << "first child is a sexp\n";
+    if (auto pval = std::get_if<std::string>(&car(txt)))
+      std::cout << "car is a string\n";
+    else
+      std::cout << "car is a sexp\n";
+    std::cout << "car is: " << car(txt) << "\n";
+    std::cout << "cdr is: " << cdr(txt) << "\n";
 #if 0
     Sexp bin(
         {"(10:public-key(3:ecc(5:curve9:secp256k1)(1:q65:"

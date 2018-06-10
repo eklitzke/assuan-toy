@@ -1,3 +1,19 @@
+// Copyright (c) 2018 Evan Klitzke <evan@eklitzke.org>
+//
+// This file is part of assuan-toy.
+//
+// assuan-toy is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// assuan-toy is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with
+// assuan-toy. If not, see <http://www.gnu.org/licenses/>.
+
 #include "./sexp.h"
 
 #include <ctype.h>
@@ -68,22 +84,38 @@ Sexp::Sexp(const std::string &input) {
   }
   assert(stack_size == 0);
   assert(word_size == 0);
-  Sexp child = std::get<Sexp>(children_[0]);
-  *this = std::get<Sexp>(child.children_[0]);
+  Sexp child = std::get<Sexp>(children_.front());
+  *this = std::get<Sexp>(child.children_.front());
 }
 
 std::ostream &operator<<(std::ostream &os, const Sexp &sexp) {
-  if (sexp.empty()) {
-    os << "()";
-    return os;
-  }
-  const std::vector<Node> &children = sexp.children();
   os << "(";
-  for (size_t i = 0; i < sexp.size() - 1; i++) {
-    std::visit([&os](auto &&arg) { os << arg; }, children[i]);
-    os << " ";
+  const std::list<Node> &children = sexp.children();
+  if (!children.empty()) {
+    auto ultimate = children.end();
+    ultimate--;
+    for (auto it = children.begin(); it != ultimate; it++) {
+      os << *it << " ";
+    }
+    os << children.back();
   }
-  std::visit([&os](auto &&arg) { os << arg; }, children.back());
   os << ")";
   return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const Node &node) {
+  std::visit([&os](auto &&arg) { os << arg; }, node);
+  return os;
+}
+
+const Node &car(const Sexp &sexp) { return sexp.children().front(); }
+
+const Node &car(const Node &sexp) {
+  return car(std::get<Sexp>(sexp).children().front());
+}
+
+Sexp cdr(const Sexp &sexp) {
+  std::list<Node> copy = sexp.children();
+  copy.pop_front();
+  return Sexp(copy);
 }
