@@ -58,7 +58,7 @@ Sexp::Sexp(const std::string &input) {
       all_digits = true;
       allow_data = true;
       Sexp temp = std::get<Sexp>(pop());
-      push_back(temp);
+      push_sexp(temp);
       stack_size--;
     } else if (isspace(c)) {
       std::cerr << "SPACE\n";
@@ -97,20 +97,26 @@ Sexp::Sexp(const std::string &input) {
   if (word_size != 0) {
     throw bad_parse("extra characters after parse");
   }
-  Sexp child = std::get<Sexp>(nodes_.front());
-  *this = std::get<Sexp>(child.nodes_.front());
+  Sexp child = std::get<Sexp>(front());
+  *this = std::get<Sexp>(child.front());
+}
+
+Sexp Sexp::S(const std::string &s) {
+  Sexp sexp;
+  sexp.push_back(s);
+  return sexp;
 }
 
 std::ostream &operator<<(std::ostream &os, const Sexp &sexp) {
   os << "(";
-  const std::list<Node> &children = sexp.nodes_;
-  if (!children.empty()) {
-    auto ultimate = children.end();
+  if (!sexp.empty()) {
+    auto ultimate = sexp.end();
     ultimate--;
-    for (auto it = children.begin(); it != ultimate; it++) {
+    auto it = sexp.begin();
+    for (; it != ultimate; it++) {
       os << *it << " ";
     }
-    os << children.back();
+    os << *it;
   }
   os << ")";
   return os;
@@ -118,19 +124,30 @@ std::ostream &operator<<(std::ostream &os, const Sexp &sexp) {
 
 // print a node; if the node value is a string, it's escaped before printing
 std::ostream &operator<<(std::ostream &os, const Node &node) {
-  if (auto stringp = std::get_if<std::string>(&node))
+  if (auto stringp = std::get_if<std::string>(&node)) {
     os << StringEscape(*stringp);
-  else
+  } else {
     os << std::get<Sexp>(node);
+  }
   return os;
 }
 
-const Node &car(const Sexp &s) { return s.nodes_.front(); }
-
-Sexp cdr(const Sexp &s) {
-  std::list<Node> copy = s.nodes_;
-  copy.pop_front();
-  return Sexp(copy);
+const Node &nth(const Sexp &sexp, size_t n) {
+  if (n >= sexp.size()) {
+    std::ostringstream os;
+    os << "nth range check, size = " << sexp.size() << ", n = " << n;
+    throw std::out_of_range(os.str());
+  }
+  auto it = sexp.begin();
+  for (size_t i = 0; i < n; i++) {
+    it++;
+  }
+  return *it;
 }
 
-const Node &car(const Node &node) { return car(std::get<Sexp>(node)); }
+// cons a ndoe to a sexp.
+Sexp cons(const Node &node, const Sexp &sexp) {
+  Sexp copy = sexp;
+  copy.push_front(node);
+  return copy;
+}

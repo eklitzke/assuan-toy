@@ -17,6 +17,7 @@
 #include <getopt.h>
 #include <unistd.h>
 
+#include <cassert>
 #include <iostream>
 #include <sstream>
 
@@ -75,14 +76,23 @@ int main(int argc, char **argv) {
 
   std::cout << "connected to agent version " << ctx.GetVersion() << "\n";
   if (gen_key) {
-    const std::string key_sexp = ctx.GenKey();
+    const std::string key_str = ctx.GenKey();
     try {
-      Sexp key(key_sexp);
-      std::cout << "key data is: " << key << "\n";
+      Sexp key(key_str);
+      std::cout << "key sexp: " << key << "\n";
+      assert(scar(key) == "public-key");
+      key = xcar(cdr(key));
+      assert(scar(key) == "ecc");
+      key = cdr(key);
+      assert(key.size() == 2);
+      assert(snth(xcar(key), 0) == "curve");
+      assert(snth(xcar(key), 1) == "secp256k1");
+      key = xcar(cdr(key));
+      assert(key.size() == 2);
+      assert(scar(key) == "q");
+      assert(scar(cdr(key)).size() == 65);
     } catch (bad_parse &exc) {
       std::cerr << "ERROR: " << exc.what() << "\n";
-      std::cerr << "input string, " << key_sexp.size()
-                << " bytes: " << StringEscape(key_sexp) << "\n";
       return 1;
     }
   }

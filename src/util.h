@@ -19,11 +19,10 @@
 #include <ostream>
 #include <string>
 
-struct StringEscape {
-  explicit StringEscape(const std::string &s) : s(s) {}
-  std::string s;
+// Escape a string.
+struct StringEscape : std::string {
+  explicit StringEscape(const std::string &s) : std::string(s) {}
 };
-
 std::ostream &operator<<(std::ostream &os, const StringEscape &esc);
 
 std::string AssuanEncode(const std::string &s);

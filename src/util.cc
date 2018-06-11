@@ -19,10 +19,10 @@
 #include <iomanip>
 #include <sstream>
 
-const char kHexdig[] = "0123456789ABCDEF";
+static const char kDigits[] = "0123456789ABCDEF";
 
 std::ostream &operator<<(std::ostream &os, const StringEscape &esc) {
-  for (unsigned char c : esc.s) {
+  for (unsigned char c : esc) {
     if (' ' <= c and c <= '~' and c != '\\' and c != '"') {
       os << c;
     } else {
@@ -44,7 +44,7 @@ std::ostream &operator<<(std::ostream &os, const StringEscape &esc) {
           os << 'n';
           break;
         default:
-          os << 'x' << kHexdig[c >> 4] << kHexdig[c & 0xF];
+          os << 'x' << kDigits[c >> 4] << kDigits[c & 0xF];
       }
     }
   }
@@ -58,7 +58,7 @@ std::string AssuanEncode(const std::string &str) {
       case '%':
       case '\r':
       case '\n':
-        os << std::setw(2) << std::hex << static_cast<int>(c);
+        os << '%' << std::setw(2) << std::hex << static_cast<int>(c);
         break;
       default:
         os << c;

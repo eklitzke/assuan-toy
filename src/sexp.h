@@ -22,49 +22,87 @@
 #include <string>
 #include <variant>
 
-// An S-expression is a list of nodes.
+// Sexp are lists of nodes, and nodes are strings or sexps.
 struct Sexp;
 using Node = std::variant<std::string, Sexp>;
 
-// Functional interfaces for car and cdr.
-const Node &car(const Sexp &sexp);
-const Node &car(const Node &node);
-Sexp cdr(const Sexp &sexp);
-
-class Sexp {
+// Sexp is a list of Nodes.
+class Sexp : public std::list<Node> {
  public:
-  // Create a Sexp from a parse string.
-  explicit Sexp(const std::string &input);
+  explicit Sexp(const std::string &str);
 
-  size_t size() const { return nodes_.size(); }
-  bool empty() const { return nodes_.empty(); }
+  // Create a one-element Sexp composed of a string.
+  static Sexp S(const std::string &s);
 
-  friend std::ostream &operator<<(std::ostream &, const Sexp &);
-  friend const Node &car(const Sexp &);
-  friend Sexp cdr(const Sexp &);
+  friend std::ostream &operator<<(std::ostream &os, const Sexp &sexp);
+  friend const Node &car(const Sexp &sexp);
+  friend Sexp cdr(const Sexp &sexp);
 
  private:
-  std::list<Node> nodes_;
+  Sexp() = default;
 
-  Sexp() {}
-  explicit Sexp(std::list<Node> children) : nodes_(children) {}
+#if 0
+  // FIXME: Ideally copy constructor should be allowed but private, but
+  // uncommenting this breaks compilation...
+  Sexp(const Sexp &other) = default;
+#endif
 
-  void push() { nodes_.push_back(Sexp()); }
-
-  void push(const Sexp &sexp) { nodes_.push_back(sexp); }
-
-  void push(const std::string &s) {
-    std::get<Sexp>(nodes_.back()).nodes_.push_back(s);
+  void push() { push_back(Sexp()); }
+  void push(const Sexp &sexp) { push_back(sexp); }
+  void push(const std::string &s) { std::get<Sexp>(back()).push_back(s); }
+  void push_sexp(const Sexp &sexp) { std::get<Sexp>(back()).push(sexp); }
+  Node pop() {
+    Node tmp = back();
+    pop_back();
+    return tmp;
   }
 
-  void push_back(const Sexp &sexp) { std::get<Sexp>(nodes_.back()).push(sexp); }
-
-  Node pop() {
-    Node ret = nodes_.back();
-    nodes_.pop_back();
-    return ret;
+  Sexp cdr() const {
+    Sexp copy = *this;
+    copy.pop_front();
+    return copy;
   }
 };
+
+// Functional interface for car.
+inline const Node &car(const Sexp &s) { return s.front(); }
+
+// Functional cdr.
+inline Sexp cdr(const Sexp &s) { return s.cdr(); }
+
+// Typed car.
+template <typename T>
+const T &car(const Sexp &sexp) {
+  return std::get<T>(car(sexp));
+}
+
+// String car.
+inline const std::string &scar(const Sexp &sexp) {
+  return car<std::string>(sexp);
+}
+
+// Sexp car.
+inline const Sexp &xcar(const Sexp &sexp) { return car<Sexp>(sexp); }
+
+// Functional nth;
+const Node &nth(const Sexp &sexp, size_t n);
+
+// Typed nth.
+template <typename T>
+const T &nth(const Sexp &s, size_t n) {
+  return std::get<T>(nth(s, n));
+}
+
+// String nth;
+inline const std::string &snth(const Sexp &s, size_t n) {
+  return nth<std::string>(s, n);
+}
+
+// Sexp nth;
+inline const Sexp &xnth(const Sexp &s, size_t n) { return nth<Sexp>(s, n); }
+
+// Functional cons.
+Sexp cons(const Node &node, const Sexp &sexp);
 
 // for iostream printing
 std::ostream &operator<<(std::ostream &os, const Sexp &sexp);
